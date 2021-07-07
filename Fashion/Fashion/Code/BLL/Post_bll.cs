@@ -9,6 +9,50 @@ namespace Fashion.Code.BLL
 {
     public class Post_bll
     {
+
+        /// <summary>
+        /// 获取4张普通咨询的帖子
+        /// </summary>
+        /// <returns></returns>
+        public List<Post_model> GetFourPuTongPost()
+        {
+            Post_dal post_dal = new Post_dal();
+            List<Post_model> post_model = post_dal.GetFourPuTongPost();
+            return post_model;
+        }
+
+
+
+
+
+
+
+
+
+        /// <summary>
+        /// 执行收藏，取消收藏或不执行操作的逻辑判断
+        /// 执行操作返回1，无操作返回0
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="postId"></param>
+        /// <param name="postType"></param>
+        /// <param name="Num"></param>
+        /// <returns></returns>
+        public int check_ShouCangTieZi(string userName,string postId,string postType,string Num){
+                    User_bll user_bll = new User_bll();
+                    string userId = user_bll.GetUserId(userName).ToString();
+                    Post_dal post1 = new Post_dal();
+                    object type=post1.select_ShouCang(userId,postId);
+                    if (type == null && Num == "1")//无主帖记录，只可插入不可删除
+                        return post1.insert_ShouCang(userId, postId, postType);
+                 
+                    else if (Convert.ToInt32(type) == 1 && Num == "0")//有主帖记录，只可删除不可插入
+                        return post1.delete_ShouCang(postId,postType);
+                    else return 0; 
+         }
+
+
+
         /// <summary>
         /// 判断是否存在该标题
         /// 结果返回1代表存在
@@ -45,6 +89,22 @@ namespace Fashion.Code.BLL
         {
             Post_dal post_dal = new Post_dal();
             object postId = post_dal.GetPostId(caption);
+            if (postId == null || postId == System.DBNull.Value)
+            {
+                return 0;
+            }
+            return (int)postId;
+        }
+        /// <summary>
+        /// 通过静态post页面url查询数据库获得postId
+        /// 结果返回1代表数据库出错
+        /// </summary>
+        /// <param name="caption"></param>
+        /// <returns></returns>
+        public int GetPostIdBy_PostHtmlUrl(string postHtmlUrl)
+        {
+            Post_dal post_dal = new Post_dal();
+            object postId = post_dal.GetPostIdBy_PostHtmlUrl(postHtmlUrl);
             if (postId == null || postId == System.DBNull.Value)
             {
                 return 0;
@@ -99,16 +159,52 @@ namespace Fashion.Code.BLL
         }
 
         /// <summary>
-        /// 获取帖子的10条数据
+        /// 获取帖子的指定条数据
         /// </summary>
         /// <param name="page">页数</param>
-        /// <param name="min">第一条数据id</param>
-        /// <param name="max">最后一条数据id</param>
-        public List<Post_model> GetPost(int page, int min, int max)
+        /// <param name="count">每页数据的条数</param>       
+        public List<Post_model> GetPost(int page, int count)
         {
+            int min = (page - 1) * count + 1;//开始
+            int max = page * count;//结尾
             Post_dal post_dal = new Post_dal();
-            return post_dal.GetPost(page, min, max);
+            return post_dal.GetPost(min, max);
         }
+
+        /// <summary>
+        /// 获取标题包含关键字的帖子数据
+        /// 返回post_modelList;
+        /// </summary>
+        /// <param name="page">页数</param>
+        /// <param name="count">数量</param>
+        /// <param name="searchKeywork">要搜索的关键字</param>
+        /// <returns></returns>
+        public List<Post_model> GetSearchPost(int page, int count, string searchKeywork)
+        {
+            int min = (page - 1) * count + 1;//开始
+            int max = page * count;//结尾
+            Post_dal post_dal = new Post_dal();
+            return post_dal.GetSearchPost(min,max,searchKeywork);
+    
+        }
+
+
+
+        /// <summary>
+        /// 通过用户名获取某个用户userId的主贴帖子
+        /// 这次不用查询出全部的数据，只需查询一部分数据，因为不是用于详情内容，而是用于遍历
+        /// 特定咨询帖子id  标题 内容的前200字符  帖子的第一张图片 日期
+        /// 返回post_modelList;
+        /// </summary>
+        /// <param name="userId">用户id</param>       
+        /// <returns></returns>
+        public List<Post_model> GetShortPostData(int userId)
+        {
+            Post_dal post_dal=new Post_dal();
+            List<Post_model> post_modelList = post_dal.GetShortPostData(userId);
+            return post_modelList;
+        }
+
         /// <summary>
         /// 获取帖子编号为postId的数据,一条数据
         /// </summary>

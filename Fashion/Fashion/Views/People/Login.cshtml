@@ -6,6 +6,8 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" http-equiv="X-UA-Compatible" content="IE=edge EmulateIE10" />
     <title>Login</title>
     <script src="~/Scripts/jquery-2.0.0.js"></script>
     <script type="text/javascript">
@@ -175,15 +177,22 @@
                 $("#error_pwd").css("display", "block");
                 return false;
             }
+            if ($("#hidRankName").val() == "")
+            {
+                $("#error_pwd").text("请选择用户类型");
+                $("#error_pwd").css("display", "block");
+                return false;
+            }            
             if ($("#password").val() != "" && $("#username").val()!="")
             {
                 $.ajax({
                     url: "ajaxMakeLogin",
-                    data: { userName: $("#username").val(), password: $("#password").val() },
+                    data: { userName: $("#username").val(), password: $("#password").val(), rankName: $("#hidRankName").val() },
                     type: "post",
                     success: function (passwordCorrect) {
+                        //alert(passwordCorrect);
                         if (passwordCorrect == "1") {
-                            window.location.href = "../Topic/Home";
+                            window.location.href = "../Topic/HomeTWO";
                         }
                         else {
                             if (passwordCorrect == "0") {
@@ -195,6 +204,12 @@
                                     $("#error_pwd").text("数据库出错");
                                     $("#error_pwd").css("display", "block");//显示数据库出错提示 
                                 }
+                                else
+                                    if (passwordCorrect == "3")
+                                    {
+                                        $("#error_pwd").text("用户类型不一致");
+                                        $("#error_pwd").css("display", "block");//显示用户类型不一致的提示 
+                                    }
                             
                             }
                             
@@ -222,7 +237,7 @@
             </div>
             <div id="visitor">
                 游客
-                <a href="../Topic/Home" style="text-decoration:none;">
+                <a href="../Topic/HomeTWO" style="text-decoration:none;">
                     <img style=" vertical-align: middle;" src="../Images/people-register-next_1.png" id="nextimg" />
                 </a>
             </div>
@@ -241,9 +256,13 @@
                 <div id="login" style="">
                     <input type="text" id="username" name="username" class="ui-input" placeholder="用户名" onfocus="hide_error()" onblur="check_name()" /><br />
                     <input type="password" id="password" name="password" placeholder="密码" class="ui-input" onfocus="hide_error()"  /><br />
-                    <div style="margin-top:20px;font-weight:bold;color:white;">
-                        <label><input type="radio" name="identity" />用户</label>&nbsp;&nbsp;&nbsp;
-                        <label><input type="radio" name="identity" />专家</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <div style="margin-top:20px;font-weight:bold;color:white;margin-left:260px;width:50%;">
+                        <label><input type="radio" name="identity"  onclick=' $("#hidRankName").val("普通用户");'/>普通用户</label>&nbsp;&nbsp;
+                        <label><input type="radio" name="identity" onclick=' $("#hidRankName").val("专家");' />搭配达人</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="hidden" id="hidRankName" name="hidRankName" />
+                      
+                        
+
                     </div>
                     <input type="button" id="login" name="login" value="登录" class="ui-button "style="margin-top:15px;" onclick="check_pwd()" />
                 </div>

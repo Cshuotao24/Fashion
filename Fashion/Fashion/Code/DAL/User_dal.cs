@@ -12,6 +12,90 @@ namespace Fashion.Code.DAL
     public class User_dal
     {
 
+              /// <summary>
+              /// 查询关注记录是否存在 返回object
+              /// 存在返回查询字段concernNameId，无记录返回null
+              /// </summary>
+              /// <param name="concernNameId"></param>
+              /// <param name="beConcernNameId"></param>
+              /// <returns></returns>
+              public object select_ConIdAndBeConId(int concernNameId,int beConcernNameId)
+              {
+                  string sqlStr = "select Attention_Id from tb_Attention where Attention_ConcernsId=@concernNameId and Attention_BeConcernedId=@beConcernNameId";
+	                  SqlParameter[] parameters = new SqlParameter[] {  
+                     new SqlParameter("@concernNameId",concernNameId),
+                     new SqlParameter("@beConcernNameId",beConcernNameId),
+                   
+                           };
+                      return SqlHelper.ExecuteScalar(sqlStr, parameters);
+
+              }
+               
+              /// <summary>
+              /// 插入关注记录到tb_Attention，返回int
+              /// 成功返回1，失败返回0
+              /// </summary>
+              /// <param name="concernNameId"></param>
+              /// <param name="beConcernNameId"></param>
+              /// <returns></returns>
+              public int insert_IdTotb_Attention(int concernNameId, int beConcernNameId)
+              {
+                  string sqlStr = "insert into tb_Attention(Attention_ConcernsId,Attention_BeConcernedId)values(@concernNameId,@beConcernNameId)";
+                  SqlParameter[] parameters = new SqlParameter[] { 
+                    new SqlParameter("@concernNameId",concernNameId),
+                    new SqlParameter("@beConcernNameId",beConcernNameId),
+                   
+                   };
+                  return SqlHelper.ExecuteNonquery(sqlStr, parameters);
+
+              }
+              
+                  /// <summary>
+                  /// 取消关注操作,删除记录，返回int,成功返回1，失败返回0
+                  /// </summary>
+                  /// <param name="concernNameId"></param>
+                  /// <param name="beConcernNameId"></param>
+                  /// <returns></returns>
+                  public int delete_IdFromtb_Attention(int concernNameId,int beConcernNameId)
+                  {
+	                    string sqlStr="delete from tb_Attention where Attention_ConcernsId=@concernNameId and Attention_BeConcernedId=@beConcernNameId";
+	                       SqlParameter[] parameters = new SqlParameter[] { 
+                                new SqlParameter("@concernNameId",concernNameId),
+                                new SqlParameter("@beConcernNameId",beConcernNameId),
+                   
+                               };        
+                            return SqlHelper.ExecuteNonquery(sqlStr, parameters);
+
+
+                  }
+
+
+
+
+
+
+
+        /// <summary>
+        /// 更新User_StarCount(感谢)成功返回1
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <returns></returns>
+        public object UpdateStarCount(string userName,string Num)
+        {   
+            
+            string sqlStr1 = "update [tb_User] set User_StarCount=User_StarCount+1 where User_Name=@userName";
+            string sqlStr2 = "update [tb_User] set User_StarCount=User_StarCount-1 where User_Name=@userName";
+            SqlParameter[] parameters = new SqlParameter[]{
+                  new SqlParameter("@userName",userName)
+                   };
+            if (Num == "1")
+                return SqlHelper.ExecuteNonquery(sqlStr1, parameters);
+            else if (Num == "0")
+                return SqlHelper.ExecuteNonquery(sqlStr2, parameters);
+            else return 2;
+
+        }
+
 
         /// <summary>
         /// 通过用户名查询数据库里该用户的条数
@@ -52,6 +136,20 @@ namespace Fashion.Code.DAL
         public object GetRealName (string userName)
         {
             string sqlStr = "select User_RealName from [tb_User] where User_Name = @userName";
+            SqlParameter[] parameters = new SqlParameter[]{
+                new SqlParameter("@userName",userName)
+            };
+            return SqlHelper.ExecuteScalar(sqlStr, parameters);
+        }
+
+        /// <summary>
+        /// 通过用户名查找用户的个性签名
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <returns></returns>
+        public object GetSignature(string userName)
+        {
+            string sqlStr = "select User_Signature from [tb_User] where User_Name = @userName";
             SqlParameter[] parameters = new SqlParameter[]{
                 new SqlParameter("@userName",userName)
             };
@@ -151,14 +249,89 @@ namespace Fashion.Code.DAL
         /// <returns></returns>
         public DataTable GetBodyData(string userName)
         {
-            string sqlStr = "select User_SkinColor,User_Weight, User_XiongWei,User_YaoWei,User_TunWei,User_Height,User_LegLength,User_ThighGirth,User_CalfGirth,User_ArmGirth from [tb_User] where User_Name = @userName";
+            string sqlStr = "select User_SkinColor,User_Weight, User_XiongWei,User_YaoWei,User_TunWei,User_Height,User_LegLength,User_ThighGirth,User_CalfGirth,User_ArmGirth,User_QuanShenZhaoUrl from [tb_User] where User_Name = @userName";
             SqlParameter[] parameters = new SqlParameter[]{
                 new SqlParameter("@userName",userName)
             };
             return SqlHelper.ExecuteDataTable(sqlStr, parameters);
         }
 
+
+
         /// <summary>
+        /// 根据用户的userId 和等级名rankName  获取用户的 特定咨询数（或特定解答数） 提问数 回答数 收藏 关注数 粉丝数 获赞数
+        /// rankName为普通用户时，查询特定咨询数
+        ///                  为专家时，查询特定解答数
+        /// 成功返回CountUser_model对象的实例   
+        /// Creator:Simple
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="rankName"></param>
+        /// <returns></returns>
+        public CountUser_model GetCountUser(int userId,string rankName)
+        {
+            string sqlStr = @"select SpecialConsult.specialConsultCount,
+                                                   Post.zhuTieCount,
+                                            	   ReplyPost.replyCount,
+                                            	   Collect.collectCount,
+                                            	   Concerns.concernsCount,
+                                            	   Fans.fansCount,
+                                            	   tb_User.User_StarCount as supportCount
+                                                   from  tb_User left join
+                                                         (select Post_SenderId senderId,count(*) zhuTieCount from tb_Post 
+                                                                 group by Post_SenderId) as Post 
+                                            					 on tb_User.User_Id=Post.senderId 
+                                            					 left join
+                                            		     (select ReplyPost_ReplyerId replyId,COUNT(*) replyCount from tb_ReplyPost
+                                                                 group by ReplyPost_ReplyerId) as ReplyPost 
+                                            					 on tb_User.User_Id=ReplyPost.replyId
+                                            					 left join
+                                            					 (select  Collect_CollectorId collectorId,COUNT(*) collectCount from tb_Collect
+                                            					  group by Collect_CollectorId) as Collect
+                                            					  on tb_User.User_Id=Collect.collectorId
+                                            					  left join 
+                                            		     (select Attention_ConcernsId as concernsId,count(*) concernsCount from tb_Attention
+                                                                  group by Attention_ConcernsId)as Concerns
+                                            					  on tb_User.User_Id=Concerns.concernsId
+                                            					  left join 
+                                            			 (select Attention_BeConcernedId as beConcernedId,count(*) fansCount  from tb_Attention 
+                                                                  group by Attention_BeConcernedId)as Fans
+                                            					  on tb_User.User_Id=Fans.beConcernedId  ";
+            if (rankName == "普通用户")// rankName为普通用户时，查询特定咨询数
+            {
+                sqlStr = sqlStr + @"left join
+		                                     (select SpecialConsult_UserId userId, count(*) specialConsultCount 
+			                                   from tb_SpecialConsult
+                                               group by SpecialConsult_UserId)  as SpecialConsult on tb_User.User_Id=SpecialConsult.userId					  
+                                               where tb_User.User_Id=@userId";
+            }
+            else
+                if (rankName == "专家")//rankName为专家时，查询特定解答数
+                {
+                    sqlStr = sqlStr + @"  left join
+		                                     (select SpecialConsultSelectExpert_ExpertId userId, count(*) specialConsultCount 
+                                              from tb_SpecialConsultSelectExperts
+                                              group by SpecialConsultSelectExpert_ExpertId)  as SpecialConsult on tb_User.User_Id=SpecialConsult.userId					  
+                                               where tb_User.User_Id=@userId";
+                }
+            SqlParameter[] parameters = new SqlParameter[]{
+                new SqlParameter("@userId",userId)
+            };
+            DataTable dt=SqlHelper.ExecuteDataTable(sqlStr,parameters);
+            if(dt.Rows.Count>1)
+            {
+                throw new Exception("数据库出错，查询到的数据条数超过1条");//数据库存在多条数据
+            }
+            if (dt.Rows.Count == 0)
+            {//查询到的数据条数为0
+                return new CountUser_model();
+            }
+            return ToModel_CountUser(dt.Rows[0]);
+        }
+
+
+        /// <summary>
+        /// Creator:Simple
         /// 获取一定数量的专家的数据：id、用户名、头像url          
         /// </summary>
         /// <returns></returns>
@@ -188,13 +361,25 @@ namespace Fashion.Code.DAL
                 new SqlParameter("@userName",userName)
             };
             DataTable userData = SqlHelper.ExecuteDataTable(sqlStr,parameters);
-            user_model.birthDate = (DateTime)userData.Rows[0]["User_BirthDate"];
-            user_model.height = Convert.ToSingle(userData.Rows[0]["User_Height"]);
-            user_model.tunWei = Convert.ToSingle(userData.Rows[0]["User_TunWei"]);
-            user_model.yaoWei = Convert.ToSingle(userData.Rows[0]["User_YaoWei"]);
-            user_model.xiongWei = Convert.ToSingle(userData.Rows[0]["User_XiongWei"]);
-            user_model.weight = Convert.ToSingle(userData.Rows[0]["User_Weight"]);
-            user_model.skinColor = userData.Rows[0]["User_SkinColor"].ToString();
+            if (userData.Rows.Count == 0)
+            {//不存在该用户时
+                throw new Exception("不存在该用户，查询到的数据为空");
+            }
+            if (userData.Rows[0]["User_BirthDate"] == System.DBNull.Value)
+            {
+            
+            }
+            else
+            {
+                user_model.birthDate = (DateTime)userData.Rows[0]["User_BirthDate"];
+            }
+
+            user_model.height = userData.Rows[0]["User_Height"] == System.DBNull.Value ? 0 : Convert.ToSingle(userData.Rows[0]["User_Height"]);
+            user_model.tunWei = userData.Rows[0]["User_TunWei"] == System.DBNull.Value ? 0 : Convert.ToSingle(userData.Rows[0]["User_TunWei"]);
+            user_model.yaoWei = userData.Rows[0]["User_YaoWei"] == System.DBNull.Value ? 0 : Convert.ToSingle(userData.Rows[0]["User_YaoWei"]);
+            user_model.xiongWei = userData.Rows[0]["User_XiongWei"] == System.DBNull.Value ? 0 : Convert.ToSingle(userData.Rows[0]["User_XiongWei"]);
+            user_model.weight = userData.Rows[0]["User_Weight"] == System.DBNull.Value ? 0 : Convert.ToSingle(userData.Rows[0]["User_Weight"]);
+            user_model.skinColor = userData.Rows[0]["User_SkinColor"] == System.DBNull.Value ? "请选择" : userData.Rows[0]["User_SkinColor"].ToString();
             return user_model;
         }
 
@@ -415,6 +600,25 @@ namespace Fashion.Code.DAL
             return model;     
         }
 
+
+        /// <summary>
+        /// 将一条数据转化为CountUser_model 用户的：点赞数 关注数 粉丝数 收藏数 提问数 回帖数 特定咨询数 等
+        /// </summary>
+        /// <param name="row"></param>
+        /// <returns></returns>
+        public CountUser_model ToModel_CountUser(DataRow row)
+        {
+            CountUser_model countUser_model = new CountUser_model();
+            countUser_model.specialConsultCount = row["specialConsultCount"] == System.DBNull.Value ? 0 :(int) row["specialConsultCount"];
+            countUser_model.zhuTieCount = row["zhuTieCount"] == System.DBNull.Value ? 0 : (int)row["zhuTieCount"];
+            countUser_model.replyCount = row["replyCount"] == System.DBNull.Value ? 0 : (int)row["replyCount"];
+            countUser_model.collectCount = row["collectCount"] == System.DBNull.Value ? 0 : (int)row["collectCount"];
+            countUser_model.concernsCount = row["concernsCount"] == System.DBNull.Value ? 0 : (int)row["concernsCount"];
+            countUser_model.fansCount = row["fansCount"] == System.DBNull.Value ? 0 : (int)row["fansCount"];
+            countUser_model.supportCount = row["supportCount"] == System.DBNull.Value ? 0 : (int)row["supportCount"];
+            return countUser_model;
+        }
+
         /// <summary>
         /// 将从数据库里取回的一行数据转化为User_model数据
         /// </summary>
@@ -465,19 +669,21 @@ namespace Fashion.Code.DAL
         /// <param name="profession"></param>
         /// <param name="introduction"></param>
         /// <returns></returns>
-        public int InsertExrertRegisterstring(string userName, string realName, string password, string salt, string rankId, string Email, string phoneNumber, string profession, string introduction)
+        public int InsertExrertRegisterstring(string userName, string realName, string password, string salt, string rankId, string Email, string phoneNumber, string profession, string introduction,string quanShenZhaoUrl,string touXiangUrl)
         {
-            string sqlStr = "insert into [tb_User](User_Name,User_RealName,[User_Password],User_Salt,User_RankId,User_Email,User_PhoneNumber,User_Profession,User_Introduction)values(@userName,@realName,@password,@salt,@rankId,@email,@phoneNumber,@profession,@introduction)";
+            string sqlStr = "insert into [tb_User](User_Name,User_RealName,User_QuanShenZhaoUrl,User_TouXiangUrl,[User_Password],User_Salt,User_RankId,User_Email,User_PhoneNumber,User_Profession,User_Introduction)values(@userName,@realName,@quanShenZhaoUrl,@touXiangUrl,@password,@salt,@rankId,@email,@phoneNumber,@profession,@introduction)";
             SqlParameter[] parameters = new SqlParameter[]{
-            new SqlParameter("userName", userName),
-            new SqlParameter("realName",realName),
-            new SqlParameter("password",password),
+            new SqlParameter("@userName", userName),
+            new SqlParameter("@realName",realName),
+            new SqlParameter("@quanShenZhaoUrl",quanShenZhaoUrl),
+            new SqlParameter("@touXiangUrl",touXiangUrl),
+            new SqlParameter("@password",password),
             new SqlParameter("@salt", salt),
-            new SqlParameter("rankId", rankId),
-            new SqlParameter("Email",Email),
-            new SqlParameter("phoneNumber", phoneNumber),
-            new SqlParameter("profession", profession),
-            new SqlParameter("introduction", introduction),
+            new SqlParameter("@rankId", rankId),
+            new SqlParameter("@Email",Email),
+            new SqlParameter("@phoneNumber", phoneNumber),
+            new SqlParameter("@profession", profession),
+            new SqlParameter("@introduction", introduction),
           };
             return SqlHelper.ExecuteNonquery(sqlStr, parameters);
 
@@ -514,13 +720,15 @@ namespace Fashion.Code.DAL
         /// <param name="password">密码</param>
         /// <param name="rankId">等级编号</param>
         /// <returns></returns>
-        public int InsertPhoneNumberRegister(string userName, string salt, string password, string rankId, string phoneNumber)
+        public int InsertPhoneNumberRegister(string userName, string salt, string password, string rankId, string phoneNumber, string quanShenZhaoUrl, string touXiangUrl)
         {
 
-            string sqlStr = "insert into [tb_User] (User_Name,User_Salt,[User_Password],User_RankId,User_PhoneNumber) values (@userName,@salt,@password,@rankId,@phoneNumber)";
+            string sqlStr = "insert into [tb_User] (User_Name,User_Salt,User_QuanShenZhaoUrl,User_TouXiangUrl,[User_Password],User_RankId,User_PhoneNumber) values (@userName,@salt,@quanShenZhaoUrl,@touXiangUrl,@password,@rankId,@phoneNumber)";
             SqlParameter[] parameters = new SqlParameter[] { 
                 new SqlParameter("userName",userName),
                 new SqlParameter("@salt",salt),
+                new SqlParameter("@quanShenZhaoUrl",quanShenZhaoUrl),
+                new SqlParameter("touXiangUrl",touXiangUrl),
                 new SqlParameter("password",password),
                 new SqlParameter("rankId",rankId),
                 new SqlParameter("phoneNumber",phoneNumber)
@@ -538,12 +746,14 @@ namespace Fashion.Code.DAL
         /// <param name="rankId"></param>
         /// <param name="Email"></param>
         /// <returns></returns>
-        public int InsertEmailRegister(string userName, string salt, string password, string rankId, string email)
+        public int InsertEmailRegister(string userName, string salt, string password, string rankId, string email, string quanShenZhaoUrl, string touXiangUrl)
         {
-            string sqlStr = "insert into [tb_User] (User_Name,User_Salt,[User_Password],User_RankId,User_Email) values (@userName,@salt,@password,@rankId,@email)";
+            string sqlStr = "insert into [tb_User] (User_Name,User_Salt,User_QuanShenZhaoUrl,User_TouXiangUrl,[User_Password],User_RankId,User_Email) values (@userName,@salt,@quanShenZhaoUrl,@touXiangUrl,@password,@rankId,@email)";
             SqlParameter[] parameters = new SqlParameter[] { 
                 new SqlParameter("userName",userName),
                 new SqlParameter("@salt",salt),
+                 new SqlParameter("@quanShenZhaoUrl",quanShenZhaoUrl),
+                new SqlParameter("touXiangUrl",touXiangUrl),
                 new SqlParameter("password",password),
                 new SqlParameter("rankId",rankId),
                 new SqlParameter("email",email)

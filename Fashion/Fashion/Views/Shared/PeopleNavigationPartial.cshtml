@@ -1,0 +1,70 @@
+﻿@{
+    Fashion.Models.CountUser_model countUser_model = ViewData["countUser_model"] as Fashion.Models.CountUser_model;
+    
+}
+@*这里是局部页面,导航条：我的主页 特定咨询 提问  回答 收藏 消息*@
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var rankName = "@ViewData["rankName"]";
+        MySpecialConsultOrlAnswer(rankName);
+        var actionName = "@ViewData["actionName"]";
+        Set_TabBarSelected(actionName);
+        
+        
+    });
+    //根据用户的等级显示特定解答或特定咨询标题栏
+    //rankName代表等级名
+    function MySpecialConsultOrlAnswer(rankName)
+    {
+        if (rankName == "专家") {
+            $("#mySpecialAnswer").css("display", "block");
+            $("#mySpecialConsult").css("display", "none");
+        }
+        else
+            if (rankName=="普通用户")
+            {
+                $("#mySpecialConsult").css("display", "block");
+                $("#mySpecialAnswer").css("display", "none");
+        }
+    }
+    //设置标题栏的被选择状态
+    //参数，tabBarId：标题栏的id
+    function Set_TabBarSelected(actionName)
+    {
+        switch (actionName)
+        {
+            case "myAnsweres":
+                $("#myAnsweres").attr("class", "tab_ing");
+                break;
+            case "MySpecialConsult":
+                $("#mySpecialConsult").attr("class", "tab_ing");
+                break;
+            case "MySpecialAnswer":
+                $("#mySpecialAnswer").attr("class", "tab_ing");
+                break;
+            case "myCollections":
+                $("#myCollections").attr("class", "tab_ing");
+                break;
+            case "myAsks":
+                $("#myAsks").attr("class", "tab_ing");
+                break;
+            default:
+                $("#myIndex").attr("class", "tab_ing");
+                break;
+        }  
+    }
+
+
+
+</script>
+
+<div class="tab_bar">
+    <h2 id="myIndex" onclick="window.location.href = 'Index'">我的主页</h2>
+    <h2 id="mySpecialAnswer" onclick="window.location.href = 'MySpecialAnswer'">特定解答<span>@countUser_model.specialConsultCount</span></h2>
+    <h2 id="mySpecialConsult" onclick="window.location.href = 'MySpecialConsult'">特定咨询<span>@countUser_model.specialConsultCount</span></h2>
+    <h2 id="myAsks"  onclick="window.location.href = 'myAsks'">提问<span>@countUser_model.zhuTieCount</span></h2>
+    <h2 id="myAnsweres"  onclick="window.location.href = 'myAnsweres'">回答<span>@countUser_model.replyCount</span></h2>
+    <h2 id="myCollections"  onclick="window.location.href = 'myCollections'">收藏<span>@countUser_model.collectCount</span></h2>
+    <h2 id="myMessage" onclick="window.location.href = 'myMessages'">消息<span>0</span></h2>
+</div>

@@ -1,16 +1,32 @@
 ﻿@{
-    Layout = null;
+    
 }
 
 <!DOCTYPE html>
-
-<html>
+<html style="height:100%;">
 <head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Index</title>
-    
+    <title>Zero Clipboard Test</title>
+    <meta charset="utf-8">
+    <style>
+        div ul li .aa{
+            background-color:blue;
+        }
+    </style>
+    <script type="text/javascript">
+        function a()
+        {
+            alert($(document).scrollTop());
+        }
+        function b()
+        {
+            $(document).scrollTop(0);
+        }
+    </script>
 </head>
-<body>
-    
+<body style="height: 2000px;border:1px solid red;">
+    <div style="height:200%;">
+        <input type="button" style="position:fixed;"  value="获取滚动轮的值" onclick="a();"/>
+        <input type="button" style="position:fixed;" value="回到顶部" onclick="b();" />
+    </div>
 </body>
 </html>
